@@ -22,7 +22,8 @@ class Dataset_Loader:
         return dataset
 
     def split_dataset(dataset, split_amount):
-        split_index = int(split_amount * len(dataset.data))
+        split_index = split_amount * len(dataset.data)
+        split_index = int(split_index)
         indices = permutation(len(dataset.data))
         train = dc(dataset)
         test = dc(dataset)

@@ -1,4 +1,4 @@
-class  Hard_Coded:
+class  k_Nearest_Neighbor:
 
     def train(self, dataset):
         return
