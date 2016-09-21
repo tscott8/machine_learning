@@ -1,17 +1,22 @@
 class  Hard_Coded:
 
-    def train(self, dataset):
-        return
+    def __init__(self):
+        self.data = []
+        self.targets = []
 
-    def predict(self, dataset):
+    def train(self, data, targets):
+        self.data = data
+        self.targets = targets
+
+    def predict(self, data, targets):
         predictions = []
         correct_prediction = 0.0
-        for i, data_point in enumerate(dataset):
+        for i in range(len(targets)):
             predicted_number = 1
             predictions.append(predicted_number)
 
-            if predictions[i] == data_point:
+            if predictions[i] == targets[i]:
                 correct_prediction += 1
 
-        predict_percent = ((correct_prediction/len(dataset)*100))
-        print("Method Percentage = " + str(predict_percent) + "%")
+        predict_percent = ((correct_prediction/len(targets)*100))
+        return predict_percent

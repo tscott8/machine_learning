@@ -6,30 +6,33 @@ Created on Sat Sep 17 17:55:00 2016
 """
 import sys
 from pprint import pprint
-from load import Dataset_Loader as dl
-from classifiers.hardcoded import Hard_Coded as hardcoded
-from classifiers.knn import k_Nearest_Neighbor as knn
+from load import Dataset_Loader
+from classifiers.hardcoded import Hard_Coded
+from classifiers.knn import k_Nearest_Neighbor
 
 def getInput():
     location = input("If you are loading a csv please input the filename, otherwise input the name of the dataset: ") or 'iris'
-    opts = input("Enter loading options separated by commas (options available = shuffled, split): ") or 'shuffled'
-    split_amount = 0.7
-    if 'split' in opts:
-        split_amount = float(input("Enter the split percentage as a decimal (default is 0.7): ") or 0.7)
-    print("loading dataset @ " + location + " with " + opts +" enabled...")
+    split_amount = float(input("Enter the split percentage as a decimal (default is 0.7): ") or 0.7)
     classifier = {}
-    classifier['type'] = input("Enter classification mode (moes available = hardcoded, knn): ") or 'hardcoded'
+    classifier['type'] = input("Enter classification mode (modes available = hardcoded, knn): ") or 'knn'
     if 'knn' in classifier['type']:
-        classifier['k'] = input("Enter a value for k (default is 1): ") or 1
-    return location, opts, split_amount, classifier
+        classifier['k'] = int(input("Enter a value for k (default is 1): ") or 1)
+    return location, split_amount, classifier
 
-def process_data(datas, classifier):
+def process_data(training_dataset, testing_dataset, classifier):
+    accuracy = 0
+
     if 'knn' in classifier['type']:
-        knn.train(datas[0].data, datas[0].target)
-        knn.predict(datas[1].data, datas[1].target)
-    else:
-        hardcoded.train(datas[0].data, datas[0].target)
-        hardcoded.predict(datas[1].data, datas[1].target)
+        knn = k_Nearest_Neighbor(classifier['k'])
+        knn.train(training_dataset.data, training_dataset.target)
+        accuracy = knn.accuracy(knn.predict(testing_dataset.data), testing_dataset.target)
+
+    if 'hardcoded' in classifier['type']:
+        hc = Hard_Coded()
+        hc.train(training_dataset.data, training_dataset.target)
+        accuracy = hc.predict(testing_dataset.data, testing_dataset.target)
+
+    print("Method Percentage = " + str(accuracy) + "%")
 
 def console_messages(dataset, training_dataset, testing_dataset):
     print("dataset length:", len(dataset))
@@ -39,12 +42,10 @@ def console_messages(dataset, training_dataset, testing_dataset):
     print("training_dataset.data:", training_dataset.data)
     print("training_dataset.target:", training_dataset.target)
     print("training_dataset.target_names:", training_dataset.target_names)
-    printAll(training_dataset)
 
     print("testing_dataset.data:", testing_dataset.data)
     print("testing_dataset.target:", testing_dataset.target)
     print("testing_dataset.target_names:", testing_dataset.target_names)
-    printAll(testing_dataset)
 
     print("train_dataset.data length:", len(training_dataset.data))
     print("train_dataset.target length:", len(training_dataset.target))
@@ -64,11 +65,12 @@ def printAll(dataset):
 
 
 def main(args):
-    location, opts, split_amount, classifier = getInput()
-    dataset = dl.load_dataset(location, opts)
+    dl = Dataset_Loader()
+    location, split_amount, classifier = getInput()
+    dataset = dl.load_dataset(location)
     training_dataset, testing_dataset = dl.split_dataset(dataset, split_amount)
     # console_messages(dataset, training_dataset, testing_dataset)
-    process_data([training_dataset, testing_dataset], classifier)
+    process_data(training_dataset, testing_dataset, classifier)
 
 
 if __name__ == "__main__":

@@ -1,17 +1,40 @@
+import numpy as np
 class  k_Nearest_Neighbor:
 
-    def train(self, dataset):
+    def __init__(self, neighbors=1):
+        self.k = neighbors
+        self.data = []
+        self.targets = []
+
+    def train(self, data, targets):
+        self.data = data
+        self.targets = targets
         return
 
-    def predict(self, dataset):
-        predictions = []
-        correct_prediction = 0.0
-        for i, data_point in enumerate(dataset):
-            predicted_number = 1
-            predictions.append(predicted_number)
+    def predict(self, inputs):
+        nInputs = np.shape(inputs)[0]
+        closest = np.zeros(nInputs)
+        for n in range(nInputs):
+            # Compute distances
+            distances = np.sum((self.data-inputs[n,:])**2,axis=1)
+            # Identify the nearest neighbours
+            indices = np.argsort(distances,axis=0)
+            classes = np.unique(self.targets[indices[:self.k ]])
+            if len(classes)==1:
+                closest[n] = np.unique(classes)
+            else:
+                counts = np.zeros(max(classes)+1)
+                for i in range(self.k ):
+                    counts[self.targets[indices[i]]] += 1
+                    closest[n] = np.max(counts)
+        return closest
 
-            if predictions[i] == data_point:
-                correct_prediction += 1
-
-        predict_percent = ((correct_prediction/len(dataset)*100))
-        print("Method Percentage = " + str(predict_percent) + "%")
+    def accuracy(self, predicted, actual):
+        denominator = len(actual)
+        numerator = 0
+        for i in range(len(predicted)):
+            # print("predicted: ", predicted[i], "actual: ", actual[i])
+            if predicted[i] == actual[i]:
+                numerator += 1
+        percent = (numerator/denominator)*100
+        return percent

@@ -7,11 +7,12 @@ import csv
 
 class Dataset_Loader:
 
-    def load_csv(location):
+    def load_csv(self, location):
         dataset = csv.reader(location, dialect='excel')
         return dataset
 
-    def shuffle_dataset(dataset):
+    def shuffle_dataset(self, dataset):
+        #unneccessary with the split_dataset implemented
         data = dataset.data
         target = dataset.target
         zipData = list(zip(data, target))
@@ -21,7 +22,7 @@ class Dataset_Loader:
         dataset.target = target
         return dataset
 
-    def split_dataset(dataset, split_amount):
+    def split_dataset(self, dataset, split_amount):
         split_index = split_amount * len(dataset.data)
         split_index = int(split_index)
         indices = permutation(len(dataset.data))
@@ -31,13 +32,11 @@ class Dataset_Loader:
         test.data, test.target = dataset.data[indices[split_index:]], dataset.target[indices[split_index:]]
         return train, test
 
-    def load_dataset(location, opts):
+    def load_dataset(self, location):
         dataset = []
         if '.csv' in location:
-            dataset = Dataset_Loader.load_csv("./datasets/"+location)
+            dataset = self.load_csv("./datasets/"+location)
         else:
             method= 'load_'+ location
             dataset = getattr(datasets, method)()
-        if 'shuffled' in opts:
-            dataset = Dataset_Loader.shuffle_dataset(dataset)
         return dataset
