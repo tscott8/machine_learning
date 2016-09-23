@@ -1,4 +1,4 @@
-class  Hard_Coded:
+class Hard_Coded:
 
     def __init__(self):
         self.data = []

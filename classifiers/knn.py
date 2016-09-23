@@ -1,5 +1,5 @@
 import numpy as np
-class  k_Nearest_Neighbor:
+class k_Nearest_Neighbor:
 
     def __init__(self, neighbors=1):
         self.k = neighbors
@@ -36,5 +36,5 @@ class  k_Nearest_Neighbor:
             # print("predicted: ", predicted[i], "actual: ", actual[i])
             if predicted[i] == actual[i]:
                 numerator += 1
-        percent = (numerator/denominator)*100
+        percent = float((numerator/denominator)*100)
         return percent
