@@ -7,16 +7,21 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from sklearn.datasets.base import Bunch
+
+
 class Loader:
 
     def load_car_dataset(self, location):
         df = pd.read_csv(location)
-        replaces = ('vhigh', 4), ('high', 3), ('med', 2), ('low', 1), ('5more', 6), ('more', 5), ('small', 1), ('big', 3), ('unacc', 0), ('acc', 1), ('good', 2), ('vgood', 3), ('1', 1), ('2', 2), ('3', 3), ('4', 4), ('5', 5), ('6',6)
+        replaces = ('vhigh', 4), ('high', 3), ('med', 2), ('low', 1),\
+            ('5more', 6), ('more', 5), ('small', 1), ('big', 3), ('unacc', 0),\
+            ('acc', 1), ('good', 2), ('vgood', 3), ('1', 1), ('2', 2),\
+            ('3', 3), ('4', 4), ('5', 5), ('6', 6)
         df = reduce(lambda a, kv: a.replace(*kv), replaces, df)
         car = df.values
         dataset = Bunch()
         dataset['data'], dataset['target'] = car[:, :6], car[:, 6]
-        dataset['target_names'] = ['unacc', 'acc', 'good','vgood']
+        dataset['target_names'] = ['unacc', 'acc', 'good', 'vgood']
         return dataset
 
     def load_csv(self, location):
@@ -42,8 +47,10 @@ class Loader:
         indices = permutation(len(dataset.data))
         train = dc(dataset)
         test = dc(dataset)
-        train.data, train.target = dataset.data[indices[:split_index]], dataset.target[indices[:split_index]]
-        test.data, test.target = dataset.data[indices[split_index:]], dataset.target[indices[split_index:]]
+        train.data, train.target = dataset.data[indices[:split_index]],\
+            dataset.target[indices[:split_index]]
+        test.data, test.target = dataset.data[indices[split_index:]],\
+            dataset.target[indices[split_index:]]
         return train, test
 
     def load_dataset(self, location):
@@ -51,7 +58,7 @@ class Loader:
         if '.csv' in location:
             dataset = self.load_csv("./datasets/"+location)
         else:
-            method= 'load_'+ location
+            method = 'load_{0}'.format(location)
             dataset = getattr(datasets, method)()
         return dataset
 

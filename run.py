@@ -10,14 +10,20 @@ from load import Loader
 from classifiers.hardcoded import Hard_Coded
 from classifiers.knn import k_Nearest_Neighbor
 
+
 def getInput():
-    location = input("If you are loading a csv please input the filename, otherwise input the name of the dataset: ") or 'iris'
-    split_amount = float(input("Enter the split percentage as a decimal (default is 0.7): ") or 0.7)
+    location = input("If you are loading a csv please input the filename, "
+                     "otherwise input the name of the dataset: ") or 'iris'
+    split_amount = float(input("Enter split percentage as decimal "
+                               "(default = 0.7): ") or 0.7)
     classifier = {}
-    classifier['type'] = input("Enter classification mode (modes available = hardcoded, knn): ") or 'knn'
+    classifier['type'] = input("Enter classification mode "
+                               "(modes = hardcoded, knn): ") or 'knn'
     if 'knn' in classifier['type']:
-        classifier['k'] = int(input("Enter a value for k (default is 1): ") or 1)
+        classifier['k'] = int(input("Enter a value for k "
+                                    "(default = 1): ") or 1)
     return location, split_amount, classifier
+
 
 def process_data(training_dataset, testing_dataset, classifier):
     accuracy = 0
@@ -25,14 +31,16 @@ def process_data(training_dataset, testing_dataset, classifier):
     if 'knn' in classifier['type']:
         knn = k_Nearest_Neighbor(classifier['k'])
         knn.train(training_dataset.data, training_dataset.target)
-        accuracy = knn.accuracy(knn.predict(testing_dataset.data), testing_dataset.target)
+        accuracy = knn.accuracy(knn.predict(testing_dataset.data),
+                                testing_dataset.target)
 
     if 'hardcoded' in classifier['type']:
         hc = Hard_Coded()
         hc.train(training_dataset.data, training_dataset.target)
         accuracy = hc.predict(testing_dataset.data, testing_dataset.target)
 
-    print("Method Percentage = {0}% accuracy".format(accuracy))
+    print("Method Accuracy = {0}%".format(int(accuracy)))
+
 
 def console_messages(dataset, training_dataset, testing_dataset):
     print('original dataset', dataset)
@@ -54,6 +62,7 @@ def console_messages(dataset, training_dataset, testing_dataset):
     print("testing_dataset.data length:", len(testing_dataset.data))
     print("testing_dataset.target length:", len(testing_dataset.target))
 
+
 def printAll(dataset):
     table = [['sep_len', 'sep_wid', 'pet_len', 'pet_wid', 'class']]
     for i in range(len(dataset.data)):
@@ -63,6 +72,7 @@ def printAll(dataset):
         row.append(dataset.target_names[dataset.target[i]])
         table.append(row)
     pprint(table)
+
 
 def main(args):
     dl = Loader()
