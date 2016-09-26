@@ -1,10 +1,9 @@
 import numpy as np
 
 
-class k_Nearest_Neighbor:
+class ID3_Decision_Tree:
 
-    def __init__(self, neighbors=1):
-        self.k = neighbors
+    def __init__(self):
         self.data = []
         self.targets = []
 
