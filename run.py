@@ -22,25 +22,28 @@ class Run:
 
     def getInput(self):
         self.loader = int(input("Select Loader ([1] Load sklearn dataset, "
-                                "[2] Load .csv file): ") or 1)
+                                "[2] Load .csv file): ") or 2)
         if self.loader == 1:
             self.location = input("Enter the dataset name (iris, boston, "
                                   "diabetes, digits, linnerud): ") or 'iris'
         else:
-            self.location = input("Enter the filename: ") or 'car.csv'
-
+            self.location = input("Enter the filename: ") or 'votes.csv'
         self.split_amount = float(input("Enter split percentage as decimal "
                                         "(default = 0.7): ") or 0.7)
         self.classifier['type'] = input("Enter classification mode "
-                                        "(hardcoded, knn, id3): ") or 'knn'
+                                        "(hardcoded, knn, id3): ") or 'id3'
         if 'knn' in self.classifier['type']:
             self.classifier['k'] = int(input("Enter a value for k "
                                              "(default = 1): ") or 1)
-        # if 'id3' in classifier['type']:
-        # return location, split_amount, classifier
+        return self.location, self.split_amount, self.classifier
 
     def process_data(self, training_dataset, testing_dataset, classifier):
         accuracy = 0
+        if 'id3' in classifier['type']:
+            id3 = ID3_Decision_Tree()
+            id3.train(training_dataset.data, training_dataset.target)
+            # accuracy = id3.accuracy(id3.predict(testing_dataset.data),
+                                    # testing_dataset.target)
 
         if 'knn' in classifier['type']:
             knn = k_Nearest_Neighbor(classifier['k'])
@@ -55,7 +58,7 @@ class Run:
 
         print("Method Accuracy = {0}%".format(int(accuracy)))
 
-    def console_messages(self, dataset, training_dataset, testing_dataset):
+    def console_messages(self, dataset, training_dataset, testing_dataset, traits):
         print('original dataset', dataset)
 
         print("dataset length:", len(dataset))
@@ -75,14 +78,16 @@ class Run:
         print("testing_dataset.data length:", len(testing_dataset.data))
         print("testing_dataset.target length:", len(testing_dataset.target))
 
+        print('traits', len(traits))
+
     def main(self, args):
         dl = Loader()
         self.getInput()
         dataset = dl.load_dataset(self.location)
-        training_dataset, testing_dataset = dl.split_dataset(dataset,
-                                                             self.split_amount)
+        training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)
         self.process_data(training_dataset, testing_dataset, self.classifier)
-        # self.console_messages(dataset, training_dataset, testing_dataset)
+        # self.console_messages(dataset, training_dataset, testing_dataset,
+                            #   traits)
 
 if __name__ == "__main__":
     run = Run()
