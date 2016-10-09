@@ -11,23 +11,20 @@ from classifiers.hardcoded import Hard_Coded
 from classifiers.knn import k_Nearest_Neighbor
 from classifiers.dtree import ID3_Decision_Tree
 
+
 class Run:
 
     def __init__(self):
         self.loader = int(2)
-        self.location = 'votes.csv'
+        self.location = 'votes'
         self.split_amount = float(0.7)
         self.classifier = {}
         self.classifier['type'] = 'id3'
 
     def getInput(self):
-        self.loader = int(input("Select Loader ([1] Load sklearn dataset, "
-                                "[2] Load .csv file): ") or 2)
-        if self.loader == 1:
-            self.location = input("Enter the dataset name (iris, boston, "
-                                  "diabetes, digits, linnerud): ") or 'iris'
-        else:
-            self.location = input("Enter the filename: ") or 'votes.csv'
+        self.location = input("Enter the dataset name (iris, boston, "
+                              "diabetes, digits, linnerud, car, "
+                              "lenses, votes): ") or 'iris'
         self.split_amount = float(input("Enter split percentage as decimal "
                                         "(default = 0.7): ") or 0.7)
         self.classifier['type'] = input("Enter classification mode "

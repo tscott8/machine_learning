@@ -11,8 +11,8 @@ from sklearn.datasets.base import Bunch
 
 class Loader:
 
-    def load_car(self, df):
-        # df = pd.read_csv(location)
+    def load_car(self):
+        df = pd.read_csv('datasets/car.csv')
         replaces = ('vhigh', 4), ('high', 3), ('med', 2), ('low', 1),\
             ('5more', 6), ('more', 5), ('small', 1), ('big', 3), ('unacc', 0),\
             ('acc', 1), ('good', 2), ('vgood', 3), ('1', 1), ('2', 2),\
@@ -24,24 +24,31 @@ class Loader:
         dataset['target_names'] = ['unacc', 'acc', 'good', 'vgood']
         return dataset
 
-    def load_votes(self, df):
-        # replaces = ('?', 2), ('y', 1), ('n', 0), ('republican', 1), ('democrat', 0)
+    def load_loans(self):
+        df = pd.read_csv('datasets/loans.csv')
+        loans = df.values
+        dataset = Bunch()
+        dataset['data'], dataset['target'] = loans[:, :4], loans[:, 4]
+        dataset['target_names'] = np.unique(dataset['target'])
+        return dataset
+
+    def load_lenses(self):
+        df = pd.read_csv('datasets/lenses.csv', header=None)
+        lenses = df.values
+        dataset = Bunch()
+        dataset['data'], dataset['target'] = lenses[:, :4], lenses[:, 4]
+        dataset['target_names'] = np.unique(dataset['target'])
+        return dataset
+
+    def load_votes(self):
+        df = pd.read_csv('datasets/votes.csv', header=None)
+        # replaces = ('?', 2), ('y', 1), ('n', 0),\
+        # ('republican', 1), ('democrat', 0)
         # df = reduce(lambda a, kv: a.replace(*kv), replaces, df)
         votes = df.values
         dataset = Bunch()
         dataset['data'], dataset['target'] = votes[:, 1:], votes[:, 0]
         dataset['target_names'] = np.unique(dataset['target'])
-        return dataset
-
-    def load_csv(self, location):
-        df = pd.read_csv(location, header=None)
-        # traits = []
-        # for i in df.columns:
-        #     traits.append(np.unique(df[i].values.ravel()))
-        if 'car.csv' in location:
-            dataset = self.load_car(df)
-        if 'votes.csv' in location:
-            dataset = self.load_votes(df)
         return dataset
 
     def split_dataset(self, dataset, split_amount):
@@ -58,12 +65,11 @@ class Loader:
 
     def load_dataset(self, location):
         dataset = []
-        if '.csv' in location:
-            dataset = self.load_csv("./datasets/"+location)
-        else:
+        if ('iris' or 'boston' or 'diabetes' or
+                'digits' or 'linnerud') in location:
             method = 'load_{0}'.format(location)
             dataset = getattr(datasets, method)()
+        else:
+            method = 'load_{0}'.format(location)
+            dataset = getattr(self, method)()
         return dataset
-#
-# dl = Loader()
-# print(dl.load_csv('./datasets/votes.csv'))
