@@ -11,14 +11,14 @@ from classifiers.hardcoded import Hard_Coded
 from classifiers.knn import k_Nearest_Neighbor
 from classifiers.dtree import ID3_Decision_Tree
 
-
 class Run:
 
     def __init__(self):
-        self.loader = int(1)
-        self.location = 'iris'
+        self.loader = int(2)
+        self.location = 'votes.csv'
         self.split_amount = float(0.7)
         self.classifier = {}
+        self.classifier['type'] = 'id3'
 
     def getInput(self):
         self.loader = int(input("Select Loader ([1] Load sklearn dataset, "
@@ -42,8 +42,11 @@ class Run:
         if 'id3' in classifier['type']:
             id3 = ID3_Decision_Tree()
             id3.train(training_dataset.data, training_dataset.target)
-            # accuracy = id3.accuracy(id3.predict(testing_dataset.data),
-                                    # testing_dataset.target)
+            # predicted = id3.predict(testing_dataset.data)
+            result = []
+            for i in range(len(testing_dataset.data)):
+                result.append(id3.predict(testing_dataset.data[i]))
+            accuracy = id3.accuracy(result, testing_dataset.target)
 
         if 'knn' in classifier['type']:
             knn = k_Nearest_Neighbor(classifier['k'])
@@ -58,7 +61,7 @@ class Run:
 
         print("Method Accuracy = {0}%".format(int(accuracy)))
 
-    def console_messages(self, dataset, training_dataset, testing_dataset, traits):
+    def console_messages(self, dataset, training_dataset, testing_dataset):
         print('original dataset', dataset)
 
         print("dataset length:", len(dataset))
@@ -78,16 +81,13 @@ class Run:
         print("testing_dataset.data length:", len(testing_dataset.data))
         print("testing_dataset.target length:", len(testing_dataset.target))
 
-        print('traits', len(traits))
-
     def main(self, args):
         dl = Loader()
         self.getInput()
         dataset = dl.load_dataset(self.location)
         training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)
         self.process_data(training_dataset, testing_dataset, self.classifier)
-        # self.console_messages(dataset, training_dataset, testing_dataset,
-                            #   traits)
+        self.console_messages(dataset, training_dataset, testing_dataset)
 
 if __name__ == "__main__":
     run = Run()
