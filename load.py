@@ -21,7 +21,8 @@ class Loader:
         car = df.values
         dataset = Bunch()
         dataset['data'], dataset['target'] = car[:, :6], car[:, 6]
-        dataset['target_names'] = ['unacc', 'acc', 'good', 'vgood']
+        # dataset['target_names'] = ['unacc', 'acc', 'good', 'vgood']
+        dataset['target_names'] = np.unique(dataset['target'])
         return dataset
 
     def load_loans(self):

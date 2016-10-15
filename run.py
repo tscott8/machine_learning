@@ -84,7 +84,7 @@ class Run:
         dataset = dl.load_dataset(self.location)
         training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)
         self.process_data(training_dataset, testing_dataset, self.classifier)
-        self.console_messages(dataset, training_dataset, testing_dataset)
+        # self.console_messages(dataset, training_dataset, testing_dataset)
 
 if __name__ == "__main__":
     run = Run()
