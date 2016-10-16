@@ -9,7 +9,7 @@ class Neuron(object):
         ret = "|N" + str(neuron_id) + "| => w:("
         for i in range(len(self.weights)):
             ret += str(round(self.weights[i], 2)) + ","
-        ret += ")\n"
+        ret += ") \t num_i:(" + str(self.num_inputs) + ")\n"
         return ret
 
 
@@ -25,25 +25,27 @@ class Neuron(object):
     def get_weights(self, weights, num_inputs):
         if not self.weights:
             self.weights = np.random.random(num_inputs+1)
-        else:
-            self.update_weights(weights)
 
-    def update_weights(self, weights):
+    def update_weights(self, expected):
+        for i in range(len(self.weights)):
+            self.weights[i] -= learn_speed * (output - expected)
         return weights
 
-    def compute_output(self, inputs):
+    def compute_output(self, inputs, learn=-1):
         output = 0
+        # print('preappend:',inputs)
+        inputs = np.append(inputs, [self.bias])
+        # print('postappend:',inputs)
+
         for i in range(len(inputs)):
             output += inputs[i] * self.weights[i]
         # add the bias node because there should be one more weight unaccounted for
-        output += self.bias * self.weights[i+1]
-        print(output)
-
-        if output > 0:
-            return 1
-        else:
-            return 0
-
+        # output += self.bias * self.weights[len(self.weights)-1]
+        output = 1 if output > 0 else 0
+        if learn is not -1 and output != learn:
+            if output is not learn:
+                self.update_weights(learn, output)
+        return output
 
 class Layer(object):
     """Each Layer contains multiple neurons"""
@@ -62,10 +64,15 @@ class Layer(object):
         """ Calls the neuron class and adds it to an np.array based on the number specified in params"""
         neurons = []
         for i in range(num_neurons):
-            neurons.append(Neuron(inputs_per_neuron))
+            neurons.append(Neuron(num_inputs=inputs_per_neuron, bias=-1))
         return neurons
         # return np.asarray(neurons)
 
+    def collect_output(self, inputs):
+        output = []
+        for neuron in self.neurons:
+            output.append(neuron.compute_output(inputs))
+        return output
 
 class Neural_Network(object):
     """The Network is a collection of layers that learns and classifies targets"""
@@ -89,18 +96,28 @@ class Neural_Network(object):
         """ Calls the layer class and adds it to an list based on the params"""
         layers = []
         for i in range(len(layer_params)):
-            layers.append(Layer(layer_params[i], len(self.data[0])))
+            inputs_per_neuron =  len(self.data[0]) if i == 0 else layer_params[i-1]
+            layers.append(Layer(layer_params[i], inputs_per_neuron))
         return layers
         # return np.asarray(layers)
+    def process_data(self, inputs):
+        output = 0
+        for layer in self.layers:
+            output = layer.collect_output(inputs)
+            inputs = output
+        return output
 
-    def train(self, data, target):
+    def train(self, data, targets):
+        # print(self.process_data(data[0]))
+        training_output = []
         for row in range(len(data)):
-            for layer in range(len(self.layers)):
-                # print(self.layers[layer].__str__(layer))
-                for neuron in range(len(self.layers[layer].neurons)):
-                    # print(self.layers[layer].neurons[neuron].__str__(neuron))
-                    print(self.layers[layer].neurons[neuron].compute_output(self.data[row]))
-
+            fire = self.process_data(data[row])
+            fire = fire[0]
+            if int(fire) == int(targets[row]):
+                training_output.append(1)
+            else:
+                training_output.append(0)
+        print(training_output)
     def predict(self, data):
         pass
 
@@ -114,6 +131,6 @@ class Neural_Network(object):
         return percent
 
 iris = datasets.load_iris()
-nn = Neural_Network(iris.data, iris.target, iris.target_names, [3,4,5,4,3])
-# print(nn)
+nn = Neural_Network(iris.data, iris.target, iris.target_names, [5,4,3,2,1])
+print(nn)
 nn.train(iris.data, iris.target)
