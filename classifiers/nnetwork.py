@@ -10,63 +10,92 @@ class Neuron(object):
         ret = "|N" + str(neuron_id) + "| => w:( "
         for i in range(len(self.weights)):
             ret += str(round(self.weights[i], 3)) + " "
-        ret += ") \t num_i:(" + str(self.num_inputs) + ") \t"
-        ret += "err:(" + str(self.error_margin) + ") \n"
+        ret += ") \t num_i:(" + str(self.num_inputs) + ") \n"
+        # ret += "err:(" + str(self.error) + ") \n"
         return ret
 
 
-    def __init__(self, num_inputs, bias=-1):
+    def __init__(self, num_inputs, bias, output_fn, error_fn):
         """ The Neuron recieves a collection of inputs and based
         on the weight for each of those inputs it determines
         whether or not it will fire."""
         self.num_inputs = num_inputs  # collection of incoming values
+        # self.weights = 2*np.random.random(num_inputs+1) - 1
         self.weights = np.random.uniform(-0.5, 0.5, (num_inputs + 1)) # the weights for the inputs; managed by neuron
         self.bias = bias
-        self.error_margin = 0
+        self.output = output_fn
+        self.error = error_fn
 
     def update_weights(self, output, expected_output):
         for i in range(len(self.weights)):
-            self.weights[i] -= learn_speed * (output - expected_output)
+            self.weights[i] -= learn_speed * self.error(output, self.weights, expected_output)
 
-    def compute_output(self, inputs, expected_output=-1):
+    def compute_output(self, inputs):
         output = 0
         # add the bias node because there should be one more weight unaccounted for
         inputs = np.append(inputs, [self.bias])
         for i in range(len(inputs)):
             output += inputs[i] * self.weights[i]
         # output += self.bias * self.weights[len(self.weights)-1]
-        if expected_output is not -1 and output != expected_output:
-            self.update_weights(output, expected_output)
+        # if learning is not -1 and output != learning:
+        #     self.update_weights(output, learning)
         return cleanup_float(output)
+
 
 class Layer(object):
     """Each Layer contains multiple neurons"""
     def __str__(self, layer_id):
-        ret = "|L" + str(layer_id) + "| => \n"
+        ret = "|L" + str(layer_id) + "| => "
+        ret += ("Discontinuous" if self.fn == 0 else "Sigmoid") + "\n"
         for neuron in range(len(self.neurons)):
-                ret += "\t" + self.neurons[neuron].__str__(neuron)
+            ret += "\t" + self.neurons[neuron].__str__(neuron)
         return ret
 
-    def __init__(self, num_neurons, inputs_per_neuron):
+    def __init__(self, num_neurons, inputs_per_neuron, fn=0):
         self.num_neurons = num_neurons
         self.inputs_per_neuron = inputs_per_neuron
-        self.neurons = self.build_neurons(num_neurons, inputs_per_neuron)  # an array aka network of layers of neurons.
+        self.neurons = self.build_neurons(num_neurons, inputs_per_neuron, fn)  # an array aka network of layers of neurons.
+        self.fn = fn
 
-    def build_neurons(self, num_neurons, inputs_per_neuron):
+    def build_neurons(self, num_neurons, inputs_per_neuron, fn):
         """ Calls the neuron class and adds it to an np.array based on the number specified in params"""
         neurons = []
         for i in range(num_neurons):
-            neurons.append(Neuron(num_inputs=inputs_per_neuron, bias=-1))
+            if fn == 0:
+                neurons.append(Neuron(num_inputs=inputs_per_neuron, bias=-1,
+                                      output_fn=self.discontinuous_output, error_fn=self.end_error))
+            else:
+                neurons.append(Neuron(num_inputs=inputs_per_neuron, bias=-1,
+                                      output_fn=self.sig_output, error_fn=self.hidden_error))
         return neurons
 
-    def collect_output(self, inputs, error_margin):
+    @staticmethod
+    def discontinuous_output(x):
+        return 1 if x > 0  else 0
+
+    @staticmethod
+    def sig_output(x):
+        return 1 / (1 + np.exp(-x))
+
+    @staticmethod
+    def end_error(a, weights, targets):
+        return a + (1 - a)*(a - targets)
+
+    @staticmethod
+    def hidden_error(a, weights, errors):
+        sum_errors = 0
+        assert len(weights) == len(errors)
+        for i in range(len(weights)):
+            sum_errors += weights[i] * errors[i]
+        return a * (1 - a) * sum_errors
+
+    def collect_output(self, inputs, expected_output):
         output = []
         for neuron in self.neurons:
-            output.append(neuron.compute_output(inputs, error_margin))
+            output.append(neuron.compute_output(inputs))
+            neuron.update_weights(output[-1], expected_output)
         return output
 
-    def back_propogate(self, errors):
-        pass
 
 class Neural_Network(object):
     """The Network is a collection of layers that learns and classifies targets"""
@@ -89,9 +118,11 @@ class Neural_Network(object):
     def build_layers(self, layer_params):
         """ Calls the layer class and adds it to an list based on the params"""
         layers = []
+        print(layer_params)
         for i in range(len(layer_params)):
             inputs_per_neuron =  len(self.data[0]) if i == 0 else layer_params[i-1]
-            layers.append(Layer(layer_params[i], inputs_per_neuron))
+            layers.append(Layer(layer_params[i], inputs_per_neuron,
+                                0 if len(layer_params)-1 == i else 1))
         return layers
 
     def process_data(self, inputs, expected_output):
@@ -99,28 +130,18 @@ class Neural_Network(object):
         for layer in self.layers:
             output = layer.collect_output(inputs, expected_output)
             inputs = output
-        print('output: ', output)
-        print('max: ', max(output))
+        # print('output: ', output)
+        # print('max: ', max(output))
         return output.index(max(output))
-
-    def compare_target(self, expected_target, actual_target):
-        if expected_target == actual_target:
-            return True
-        else:
-            return False
 
 
     def train(self, data, targets):
         training_output = []
         for row in range(len(data)):
-            # processed_output = self.process_data(data[row], targets[row])
-            processed_output = undiscretize(self.process_data(data[row], targets[row]))
-            # while targets[row] != processed_output:
-            #     processed_output = undiscretize(self.process_data(data[row], targets[row]))
-            training_output.append(undiscretize(processed_output))
-            # print(processed_output)
-        # print(training_output)
-            #while the output doesnt match expected stick with row until it does get the correct output
+            processed_output = self.process_data(data[row], targets[row])
+            training_output.append(processed_output)
+
+        return training_output
 
     def predict(self, data):
         pass
@@ -158,7 +179,8 @@ iris = datasets.load_iris()
 arr_targets = []
 for i in iris.target:
     arr_targets.append(discretize(i))
-nn = Neural_Network(iris.data, iris.target, iris.target_names, [4,5,4,len(iris.target_names)])
+nn = Neural_Network(iris.data, iris.target, iris.target_names, [4, 5, 4, len(iris.target_names)])
 print(nn)
-nn.train(normalize(iris.data), iris.target)
+trained = nn.train(normalize(iris.data), iris.target)
+print(nn.accuracy(iris.target, trained))
 print(nn)

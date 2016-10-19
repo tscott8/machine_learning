@@ -10,16 +10,17 @@ from load import Loader
 from classifiers.hardcoded import Hard_Coded
 from classifiers.knn import k_Nearest_Neighbor
 from classifiers.dtree import ID3_Decision_Tree
+from classifiers.nnetwork import Neural_Network
 
 
 class Run:
 
     def __init__(self):
         self.loader = int(2)
-        self.location = 'votes'
+        self.location = 'iris'
         self.split_amount = float(0.7)
         self.classifier = {}
-        self.classifier['type'] = 'id3'
+        self.classifier['type'] = 'nn'
 
     def getInput(self):
         self.location = input("Enter the dataset name (iris, boston, "
@@ -28,14 +29,28 @@ class Run:
         self.split_amount = float(input("Enter split percentage as decimal "
                                         "(default = 0.7): ") or 0.7)
         self.classifier['type'] = input("Enter classification mode "
-                                        "(hardcoded, knn, id3): ") or 'id3'
+                                        "(hardcoded, knn, id3, nn): ") or 'nn'
         if 'knn' in self.classifier['type']:
             self.classifier['k'] = int(input("Enter a value for k "
                                              "(default = 1): ") or 1)
+        if 'nn' in self.classifier['type']:
+
+            lp = [int(s) for s in input("Enter layer parameters (i.e. 3 4 3 1): ").split()] or [4,5,4]
+            self.classifier['lp'] = lp
+
         return self.location, self.split_amount, self.classifier
 
     def process_data(self, training_dataset, testing_dataset, classifier):
         accuracy = 0
+
+        if 'nn' in classifier['type']:
+
+            lp = classifier['lp']
+            lp.append(len(training_dataset.target_names))
+            nn = Neural_Network(layer_params=lp)
+            train = nn.train(training_dataset.data, training_dataset.target)
+            # accuracy = nn.accuracy(train, nn.train(testing_dataset.data, testing_dataset))
+
         if 'id3' in classifier['type']:
             id3 = ID3_Decision_Tree()
             id3.train(training_dataset.data, training_dataset.target)
