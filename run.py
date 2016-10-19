@@ -21,6 +21,7 @@ class Run:
         self.split_amount = float(0.7)
         self.classifier = {}
         self.classifier['type'] = 'nn'
+        self.classifier['lp'] = [4,5,4]
 
     def getInput(self):
         self.location = input("Enter the dataset name (iris, boston, "
@@ -34,21 +35,19 @@ class Run:
             self.classifier['k'] = int(input("Enter a value for k "
                                              "(default = 1): ") or 1)
         if 'nn' in self.classifier['type']:
-
             lp = [int(s) for s in input("Enter layer parameters (i.e. 3 4 3 1): ").split()] or [4,5,4]
             self.classifier['lp'] = lp
-
         return self.location, self.split_amount, self.classifier
 
     def process_data(self, training_dataset, testing_dataset, classifier):
         accuracy = 0
 
         if 'nn' in classifier['type']:
-
             lp = classifier['lp']
             lp.append(len(training_dataset.target_names))
-            nn = Neural_Network(layer_params=lp)
+            nn = Neural_Network()
             train = nn.train(training_dataset.data, training_dataset.target)
+            accuracy = nn.accuracy(training_dataset.target, train)
             # accuracy = nn.accuracy(train, nn.train(testing_dataset.data, testing_dataset))
 
         if 'id3' in classifier['type']:
@@ -95,7 +94,7 @@ class Run:
 
     def main(self, args):
         dl = Loader()
-        self.getInput()
+        # self.getInput()
         dataset = dl.load_dataset(self.location)
         training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)
         self.process_data(training_dataset, testing_dataset, self.classifier)
