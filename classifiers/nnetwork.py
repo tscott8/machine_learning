@@ -1,8 +1,10 @@
 import numpy as np
 from sklearn import datasets
 from sklearn.preprocessing import normalize
+from sklearn import cross_validation
+from sklearn.datasets.base import Bunch
 
-learn_speed = 0.1  # the update frequency
+learn_speed = 0.3  # the update frequency
 
 
 class Neuron(object):
@@ -19,13 +21,14 @@ class Neuron(object):
         """ The Neuron recieves a collection of inputs and based
         on the weight for each of those inputs it determines
         whether or not it will fire."""
-        self.num_inputs = num_inputs  # collection of incoming values
-        self.weights = np.random.uniform(-0.5, 0.5, (num_inputs + 1)) # the weights for the inputs; managed by neuron
+        self.num_inputs = num_inputs
+        self.weights = np.random.uniform(-0.5, 0.5, (num_inputs))
         self.output = output_fn
         self.error = error_fn
 
     def update_weights(self, output, expected_output, next_weights):
         current_weights = self.weights[:]
+        # print('IN UPDATE WEIGHTS args:', output, expected_output, next_weights)
         error = self.error(output, expected_output, next_weights)
         for i in range(len(self.weights)):
             self.weights[i] -= learn_speed * output * error
@@ -33,10 +36,11 @@ class Neuron(object):
 
     def compute_output(self, inputs):
         output = 0
-        # add the bias node as an input
+        # print(inputs)
+        # print(self.weights)
         for i in range(len(inputs)):
             output += inputs[i] * self.weights[i]
-        return output
+        return self.output(output)
 
 
 class Layer(object):
@@ -60,9 +64,13 @@ class Layer(object):
         neurons = []
         for i in range(num_neurons):
             if fn == 0:
-                neurons.append(Neuron(num_inputs=inputs_per_neuron, output_fn=self.sig_output, error_fn=self.end_error))
+                neurons.append(Neuron(num_inputs=inputs_per_neuron,
+                                      output_fn=self.sigmoid_output,
+                                      error_fn=self.end_error))
             else:
-                neurons.append(Neuron(num_inputs=inputs_per_neuron, output_fn=self.sig_output, error_fn=self.hidden_error))
+                neurons.append(Neuron(num_inputs=inputs_per_neuron,
+                                      output_fn=self.sigmoid_output,
+                                      error_fn=self.hidden_error))
         return neurons
 
     @staticmethod
@@ -70,24 +78,26 @@ class Layer(object):
         return 1 if x > 0  else 0
 
     @staticmethod
-    def sig_output(x):
+    def sigmoid_output(x):
+        # print('IN sigmoid_output', x)
         return 1 / (1 + np.exp(-x))
 
     @staticmethod
-    def end_error(a, errors, weights):
-        return a + (1 - a) * (a - errors)
+    def end_error(a, target, weights):
+        # print('IN END_ERROR args', a, target, weights)
+        return a * (1 - a) * (a - target)
 
     @staticmethod
-    def hidden_error(a, errors, weights):
+    def hidden_error(a, error, weights):
         sum_errors = 0
-        assert len(weights) == len(errors)
+        # print('in hidden_error args:', a, error, weights)
+        # assert len(weights) == len(errors)
         for i in range(len(weights)):
-            sum_errors += weights[i] * errors[i]
+            sum_errors += weights[i] * error
         return a * (1 - a) * sum_errors
 
     def collect_output(self, inputs):
         output = []
-        inputs = list(inputs)
         inputs.append(self.bias)
         for neuron in self.neurons:
             output.append(neuron.compute_output(inputs))
@@ -96,15 +106,17 @@ class Layer(object):
     def back_propogate(self, output, errors, weights):
         layer_weights = []
         layer_errors = []
-        print(output, errors, weights)
+        # print('back_propogate args', output, errors, weights)
         for i, neuron in enumerate(self.neurons):
             attached_weights = []
             for j in range(len(weights)):
-                attached_weights.append(weights[j][i])
+                attached_weights.append(weights[i][j])
+            # print('ERRORS[I]',errors)
             layer_weight, layer_error = neuron.update_weights(output[i], errors[i], attached_weights)
-            print(layer_errors)
+            # print('LAYER WEIGHT:', layer_weight)
             layer_weights.append(layer_weight)
             layer_errors.append(layer_error)
+            # print('LAYER WEIGHTS!: ', layer_weights[0])
         return layer_weights, layer_errors
 
 class Neural_Network(object):
@@ -119,43 +131,63 @@ class Neural_Network(object):
         print(self)
 
     def __init__(self, layer_params=[4,5,4,3]):
-        self.data = []
-        self.targets = []
-        self.num_layers = len(layer_params)
         self.layers = self.build_layers(layer_params)  # an array aka network of layers of neurons.
 
     def build_layers(self, layer_params):
         """ Calls the layer class and adds it to an list based on the params"""
         layers = []
         for i in range(len(layer_params)):
-            inputs_per_neuron =  layer_params[i-1] if i > 0 else layer_params[i]
-            layers.append(Layer(layer_params[i], inputs_per_neuron,
-                                0 if len(layer_params)-1 == i else 1))
+            layers.append(Layer(num_neurons=layer_params[i],
+                                inputs_per_neuron=(layer_params[i-1] + 1) if i != 0 else (layer_params[i] + 1) ,
+                                bias=-1,
+                                fn=0 if len(layer_params)-1 == i else 1))
         return layers
 
     def train(self, data, targets):
-        self.data = data
-        self.targets = targets
-        training_output = []
-        for row in range(len(data)):
-            layer_inputs = data[row]
-            layer_output = []
-            for layer in range(len(self.layers)):
-                layer_output.append([])
-                collected_output = self.layers[layer].collect_output(layer_inputs)
-                layer_output[layer] = collected_output
-                layer_inputs = collected_output
-            next_weights = []
-            next_errors = []
-            
-            for layer in reversed(range(len(self.layers))):
-                next_weights, next_errors = self.layers[layer].back_propogate(
-                    output=layer_output[layer],
-                    errors=targets[row] if layer == len(self.layers)-1 else next_errors,
-                    weights=next_weights)
+        data = normalize(data)
+        # print('DATA', data)
+        # print('TARGETS', targets)
+        for k in range(1):
+            trained=[]
+            for row in range(len(data)):
+                layer_inputs = []
+                layer_output = []
+                for i, layer in enumerate(self.layers):
+                    layer_inputs = data[row].tolist() if i == 0 else layer_output[i-1]
+                    # print('INPUTS HERE!: ', layer_inputs)
+                    collected_output = layer.collect_output(layer_inputs)
+                    layer_output.append(collected_output)
+                    # print('COLLECTED: ', collected_output)
+                # print('LAYER OUTPUT!: ', layer_output)
+                next_weights = []
+                next_errors = []
+                for i in reversed(range(len(self.layers))):
+                    # print('LAYER_ID', i)
+                    # print('LAYER ON REVERSE', self.layers[i].__str__(i))
+                    # print('next_weights', next_weights)
+                    # print('next_errors', next_errors)
+                    errors = discretize(targets[row]) if i == (len(self.layers)-1) else next_errors
+                    # print('ERRORS', errors)
+                    next_weights, next_errors = self.layers[i].back_propogate(
+                        output=layer_output[i],
+                        #errors=targets[row] if layer == len(self.layers)-1 else next_errors,
+                        errors = errors,
+                        weights = next_weights)
+                    # print('NEXT WEIGHTS!: ', next_weights)
+                trained.append(undiscretize(layer_output[len(layer_output)-1]))
+            print(self.accuracy(trained, targets))
 
     def predict(self, data):
-        pass
+        predicted = []
+        for row in range(len(data)):
+            layer_inputs = []
+            layer_output = []
+            for i, layer in enumerate(self.layers):
+                layer_inputs = data[row].tolist() if i == 0 else layer_output
+                layer_output = layer.collect_output(layer_inputs)
+                # print('layer_output', layer_output)
+            predicted.append(undiscretize(layer_output))
+        return np.array(predicted)
 
     def accuracy(self, predicted, actual):
         denominator = len(actual)
@@ -171,30 +203,52 @@ def cleanup_float(num):
 
 def discretize(item):
     if item == 0:
-        return [1, 0, 0]
+        return [0, 0, 0, 1]
     if item == 1:
-        return [0, 1, 0]
+        return [0, 0, 1, 0]
     if item == 2:
-        return [0, 0, 1]
+        return [0, 1, 0, 0]
 
 def undiscretize(item):
-    if item == [1, 0, 0]:
-        return int(0)
-    if item == [0, 1, 0]:
-        return int(1)
-    if item == [0, 0, 1]:
-        return int(2)
-    return int(0)
+    max_index = item.index(max(item))
+    item[max_index] = 1
+    for i in range(len(item)):
+        if item[i] != 1:
+            item[i] = int(0)
 
+    if item == [0,0,0,1]:
+        # print(item)
+        return 0
+    if item == [0,0,1,0]:
+        # print(item)
+        return 1
+    if item == [0,1,0,0]:
+        # print(item)
+        return 2
+
+nn = Neural_Network([4]*8)
 iris = datasets.load_iris()
-arr_targets = []
-for i in iris.target:
-    arr_targets.append(discretize(i))
-nn = Neural_Network([4, 5, 4, len(iris.target_names)])
-print(nn)
-data = list(iris.data)
-target = list(iris.target)
-print(data, target)
-trained = nn.train(iris.data, target)
-print(nn.accuracy(iris.target, trained))
-print(nn)
+X = normalize(iris.data)
+y = iris.target
+X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.3)
+
+train_permutations = []
+test_permutations = []
+for i in range(100):
+    train = Bunch()
+    test = Bunch()
+    train['data'], test['data'], train['target'], test['target'] = cross_validation.train_test_split(X, y, test_size=0.3)
+    train_permutations.append(train)
+    test_permutations.append(test)
+for j in range(len(train_permutations)):
+    nn.train(train_permutations[j].data, train_permutations[j].target)
+    # nn.predict(test_permutations[j].data,test_permutations[j])
+
+
+# nn.train(X_train, y_train)
+
+predicted = nn.predict(X_test)
+print(predicted)
+print(y_test)
+accuracy = nn.accuracy(predicted, y_test)
+print(accuracy)

@@ -7,7 +7,8 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from sklearn.datasets.base import Bunch
-
+from sklearn.preprocessing import normalize
+from sklearn import cross_validation
 
 class Loader:
 
@@ -53,15 +54,22 @@ class Loader:
         return dataset
 
     def split_dataset(self, dataset, split_amount):
-        split_index = split_amount * len(dataset.data)
-        split_index = int(split_index)
-        indices = permutation(len(dataset.data))
-        train = dc(dataset)
-        test = dc(dataset)
-        train.data, train.target = dataset.data[indices[:split_index]],\
-            dataset.target[indices[:split_index]]
-        test.data, test.target = dataset.data[indices[split_index:]],\
-            dataset.target[indices[split_index:]]
+        # split_index = split_amount * len(dataset.data)
+        # split_index = int(split_index)
+        # indices = permutation(len(dataset.data))
+        # train = dc(dataset)
+        # test = dc(dataset)
+        # train.data, train.target = dataset.data[indices[:split_index]],\
+        #     dataset.target[indices[:split_index]]
+        # test.data, test.target = dataset.data[indices[split_index:]],\
+        #     dataset.target[indices[split_index:]]
+        train = Bunch()
+        test = Bunch()
+        X = dataset.data
+        y = dataset.target
+        split_amount = 1 - split_amount
+        train['data'], test['data'], train['target'], test['target'] = cross_validation.train_test_split(X, y, test_size=split_amount)
+        train['target_names'] = test['target_names'] = dataset.target_names
         return train, test
 
     def load_dataset(self, location):
