@@ -65,10 +65,8 @@ class Loader:
         #     dataset.target[indices[split_index:]]
         train = Bunch()
         test = Bunch()
-        X = dataset.data
-        y = dataset.target
         split_amount = 1 - split_amount
-        train['data'], test['data'], train['target'], test['target'] = cross_validation.train_test_split(X, y, test_size=split_amount)
+        train['data'], test['data'], train['target'], test['target'] = cross_validation.train_test_split(dataset.data, dataset.target, test_size=split_amount)
         train['target_names'] = test['target_names'] = dataset.target_names
         return train, test
 

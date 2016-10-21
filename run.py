@@ -50,13 +50,7 @@ class Run:
             lp.append(len(training_dataset.target_names))
             nn = Neural_Network()
             dl = Loader()
-            permutations = []
-            for i in range(10):
-                permutation, junk = dl.split_dataset(training_dataset, .1)
-                permutations.append(permutation)
-            print(permutations)
-            for j in range(len(permutations)):
-                nn.train(permutations[j].data, permutations[j].target)
+            training = nn.train(training_dataset.data,training_dataset.target)
             accuracy = nn.accuracy(nn.predict(testing_dataset.data), testing_dataset.target)
 
         if 'id3' in classifier['type']:
