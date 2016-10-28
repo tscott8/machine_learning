@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore")
 class Run:
 
     def __init__(self):
-        self.location = 'prima'
+        self.location = 'iris'
         self.split_amount = float(0.7)
         self.classifier = {}
         self.classifier['type'] = 'nn'
@@ -42,7 +42,7 @@ class Run:
             self.classifier['k'] = int(input("Enter a value for k "
                                              "(default = 1): ") or 1)
         if 'nn' in self.classifier['type']:
-            lp = [int(s) for s in input("Enter layer parameters (i.e. 3 4 3 1): ").split()] or [3]
+            lp = [int(s) for s in input("Enter layer parameters (i.e 3 4): ").split()] or []
             self.classifier['lp'] = lp
         return self.location, self.split_amount, self.classifier
 
@@ -59,8 +59,8 @@ class Run:
             training_acc = []
             predicting_acc = []
             perfect_count = 0
-            for i in range(2000):
-                train_permutations+=[dl.split_dataset(training_dataset, 0.7)[0]]
+            for i in range(1000):
+                train_permutations+=[dl.split_dataset(training_dataset, 0.5)[0]]
                 # predict_permutations+=[dl.split_dataset(testing_dataset, 0.7)[0]]
 
             for epoch in range(len(train_permutations)):
@@ -72,36 +72,37 @@ class Run:
                     trained[i] = np.array(dl.undiscretize_output(trained[i]))
                 for j in range(len(predicted)):
                     predicted[j] = np.array(dl.undiscretize_output(predicted[j]))
-                if epoch % 200 is 0 and epoch is not 0:
-                    print('Epoch '+str(epoch)+': ',' training accuracy: '+str(round(nn.accuracy(trained, train_permutations[epoch].target), 3))+'% ',
-                            ' prediction accuracy: '+str(round(nn.accuracy(predicted, testing_dataset.target),3))+'%')
+                if epoch % 100 is 0 and epoch is not 0:
+                    print('Epoch '+str(epoch)+': ',' training accuracy: '+str(round(nn.accuracy(trained, train_permutations[epoch].target), 2))+'% ',
+                            ' prediction accuracy: '+str(round(nn.accuracy(predicted, testing_dataset.target),2))+'%')
                 training_acc +=[nn.accuracy(trained, train_permutations[epoch].target)]
                 # predicting_acc +=[nn.accuracy(predicted, predict_permutations[epoch].target)]
                 predicting_acc +=[nn.accuracy(predicted, testing_dataset.target)]
-                break_flag = False
+                # break_flag = False
 
-                if len(training_acc) >= 4:
-                    last_num_train, last_num_predict = len(training_acc)-1, len(predicting_acc)-1
+                if len(training_acc) > 4:
                     last_nums_train = last_nums_predict = []
-                    average_train = 0
-                    average_predict = 0
-                    for num in range(4):
+                    last_num_train, last_num_predict = len(training_acc)-1, len(predicting_acc)-1
+                    average_train = average_predict = 0
+                    for num in range(3):
                         last_nums_train += [training_acc[last_num_train-num]]
                         last_nums_predict += [predicting_acc[last_num_predict-num]]
                         average_train = sum(last_nums_train)/len(last_nums_train)
                         average_predict = sum(last_nums_predict)/len(last_nums_predict)
-                        if average_predict >= 99:
-                            break_flag = True
-                            break
-                        if average_train >= 99 and average_predict > 90:
-                            # print(training_acc[num], training_acc[num - 1], training_acc[num - 2], training_acc[num - 3], training_acc[num - 4])
-                            print('HIT PERFECT')
-                            perfect_count += 1
-                        if perfect_count == 5:
-                            break_flag = True
-                            break
-                if break_flag is True:
-                    break
+                    if average_predict >= 98:
+                        # break_flag = True
+                        print('STOP! PREDICTION IS GOOD!')
+                        break
+                    if average_predict >= 95 and average_train >= 95:
+                    # if (average_train >= 93 or average_predict >= 93) and abs(average_train - average_predict) < 7:
+                        # print(training_acc[num], training_acc[num - 1], training_acc[num - 2], training_acc[num - 3], training_acc[num - 4])
+                        perfect_count += 1
+                        print('PERFECT COUNT', perfect_count)
+                    if perfect_count == 10:
+                        # break_flag = True
+                        break
+            # if break_flag is True:
+            #         break
 
             final_prediction = nn.predict(testing_dataset.data)
             for k in range(len(final_prediction)):
@@ -162,7 +163,7 @@ class Run:
 
     def main(self, args):
         dl = Loader()
-        # self.getInput()
+        self.getInput()
         dataset = dl.load_dataset(self.location)
         self.dataset = dataset
         training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)

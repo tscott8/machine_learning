@@ -5,7 +5,7 @@ from sklearn import cross_validation
 from sklearn.datasets.base import Bunch
 from copy import deepcopy
 
-learn_speed = 0.1  # the update frequency
+learn_speed = 0.3  # the update frequency
 
 
 class Neuron(object):
