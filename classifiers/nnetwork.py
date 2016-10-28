@@ -285,7 +285,7 @@ class Neural_Network(object):
                     count -= 1
             if count is len(actual[i]):
                 numerator += 1
-        percent = round((numerator/denominator)*100, 2)
+        percent = (numerator/denominator)*100
         return percent
 
 # def discretize(item):
