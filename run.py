@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore")
 class Run:
 
     def __init__(self):
-        self.location = 'car'
+        self.location = 'prima'
         self.split_amount = float(0.7)
         self.classifier = {}
         self.classifier['type'] = 'nn'
@@ -46,49 +46,20 @@ class Run:
             self.classifier['lp'] = lp
         return self.location, self.split_amount, self.classifier
 
-    def cheaty_face(self, full_dataset, dl, nn):
-        train_permutations = []
-        predict_permutations = []
-        training_acc = []
-        predicting_acc = []
-
-        for i in range(1000):
-            temp_train_perm, temp_predict_perm = dl.split_dataset(full_dataset, 0.7)
-            train_permutations+=[temp_train_perm]
-            predict_permutations+=[temp_predict_perm]
-
-        for epoch in range(len(train_permutations)):
-            trained = nn.train(train_permutations[epoch].data, train_permutations[epoch].target)
-            predicted = nn.predict(predict_permutations[epoch].data)
-            for i in range(len(trained)):
-                trained[i] = np.array(dl.undiscretize_output(trained[i]))
-            for i in range(len(predicted)):
-                predicted[i] = np.array(dl.undiscretize_output(predicted[i]))
-            if epoch % 100 is 0:
-                print('Epoch ', epoch, ' training accuracy: ', nn.accuracy(trained, train_permutations[epoch].target),'%')
-                print('Epoch ', epoch, ' prediction accuracy: ', nn.accuracy(predicted, predict_permutations[epoch].target),'%')
-            if epoch % 10 is 0:
-                training_acc +=[nn.accuracy(trained, train_permutations[epoch].target)]
-                predicting_acc +=[nn.accuracy(predicted, predict_permutations[epoch].target)]
-
-        return training_acc, predicting_acc
-
     def process_data(self, training_dataset, testing_dataset, classifier):
         accuracy = 0
 
         if 'nn' is classifier['type']:
             dl = Loader()
-            # self.dataset['target'] = dl.discretize_targets(self.dataset)
             training_dataset['target'] = dl.discretize_targets(training_dataset)
             testing_dataset['target'] = dl.discretize_targets(testing_dataset)
             nn = Neural_Network(layer_params=[len(training_dataset.data[0])] + classifier['lp'] + [len(training_dataset.target_names)])
-            # training_acc, predicting_acc = self.cheaty_face(self.dataset, dl, nn)
             train_permutations = []
             predict_permutations = []
             training_acc = []
             predicting_acc = []
             perfect_count = 0
-            for i in range(1000):
+            for i in range(2000):
                 train_permutations+=[dl.split_dataset(training_dataset, 0.7)[0]]
                 # predict_permutations+=[dl.split_dataset(testing_dataset, 0.7)[0]]
 
@@ -101,15 +72,15 @@ class Run:
                     trained[i] = np.array(dl.undiscretize_output(trained[i]))
                 for j in range(len(predicted)):
                     predicted[j] = np.array(dl.undiscretize_output(predicted[j]))
-                if epoch % 200 is 0:
-                    print('Epoch ', epoch, ' training accuracy: ', round(nn.accuracy(trained, train_permutations[epoch].target), 3),'%',
-                            'prediction accuracy: ', round(nn.accuracy(predicted, testing_dataset.target),3),'%')
+                if epoch % 200 is 0 and epoch is not 0:
+                    print('Epoch '+str(epoch)+': ',' training accuracy: '+str(round(nn.accuracy(trained, train_permutations[epoch].target), 3))+'% ',
+                            ' prediction accuracy: '+str(round(nn.accuracy(predicted, testing_dataset.target),3))+'%')
                 training_acc +=[nn.accuracy(trained, train_permutations[epoch].target)]
                 # predicting_acc +=[nn.accuracy(predicted, predict_permutations[epoch].target)]
                 predicting_acc +=[nn.accuracy(predicted, testing_dataset.target)]
                 break_flag = False
 
-                if len(training_acc) >= 5:
+                if len(training_acc) >= 4:
                     last_num_train, last_num_predict = len(training_acc)-1, len(predicting_acc)-1
                     last_nums_train = last_nums_predict = []
                     average_train = 0
@@ -122,11 +93,11 @@ class Run:
                         if average_predict >= 99:
                             break_flag = True
                             break
-                        if average_train >= 99:
+                        if average_train >= 99 and average_predict > 90:
                             # print(training_acc[num], training_acc[num - 1], training_acc[num - 2], training_acc[num - 3], training_acc[num - 4])
                             print('HIT PERFECT')
                             perfect_count += 1
-                        if perfect_count == 10:
+                        if perfect_count == 5:
                             break_flag = True
                             break
                 if break_flag is True:
