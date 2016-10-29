@@ -22,12 +22,12 @@ warnings.filterwarnings("ignore")
 class Run:
 
     def __init__(self):
-        self.location = 'iris'
+        self.location = 'prima'
         self.split_amount = float(0.7)
         self.classifier = {}
-        self.classifier['type'] = 'nn'
+        self.classifier['type'] = 'knn'
         self.classifier['k'] = 1
-        self.classifier['lp'] = [5]
+        self.classifier['lp'] = []
         self.dataset = None
 
     def getInput(self):
@@ -93,7 +93,7 @@ class Run:
                         # break_flag = True
                         print('STOP! PREDICTION IS GOOD!')
                         break
-                    if average_predict >= 95 and average_train >= 95:
+                    if average_predict >= 95 and average_train >= 99:
                     # if (average_train >= 93 or average_predict >= 93) and abs(average_train - average_predict) < 7:
                         # print(training_acc[num], training_acc[num - 1], training_acc[num - 2], training_acc[num - 3], training_acc[num - 4])
                         perfect_count += 1
@@ -163,7 +163,7 @@ class Run:
 
     def main(self, args):
         dl = Loader()
-        self.getInput()
+        # self.getInput()
         dataset = dl.load_dataset(self.location)
         self.dataset = dataset
         training_dataset, testing_dataset = dl.split_dataset(dataset, self.split_amount)
