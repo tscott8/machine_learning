@@ -1,17 +1,22 @@
+install.packages('C:\\Users\\tybug\\Downloads\\RLastFM_0.1-5.tar.gz', repos = NULL, type="source")
+
 library (e1071)
-SongCSV = read.csv('./SongCSV3.csv')
-# allRows = 1:nrow(SongCSV)
-# testRows = sample(allRows, trunc(length(allRows) * 0.3))
-# SongCSV_test = SongCSV[testRows,]
-# SongCSV_train = SongCSV[-testRows,]
-# model = svm(letter~., data = SongCSV_train, kernel="radial", gamma = .1, cost = 100, cross = 10)
-# prediction = predict(model, SongCSV_test[,-1])
-# confusion_matrix = table(pred = prediction, true = SongCSV_test$letter)
-# agreement = prediction == SongCSV_test$letter
-# accuracy = prop.table(table(agreement))
-#
-# #print(confusion_matrix)
-# print(accuracy)
-# #plot(model, SongCSV)
-# tuned <- tune.svm(letter~., data = SongCSV_train, gamma = 10^(-6:-1), cost = 10^(-1:1))
-# summary(tuned)
+library (datasets)
+library(cluster)
+
+songs = read.csv("~/Git/recommender_system/datasets/EvolutionPop.csv")
+songData = data.frame(songs)
+
+##Hier
+
+#songs <- songData[ ,!(names(songData) %in% c("artist_name", "artist_name_clean", "track_name", "quarter", "first_entry"))]
+songs <- songData[c("recording_id","artist_name","artist_name_clean","track_name","first_entry","quarter","year","fiveyear","decade","era")]
+#distance = dist(as.matrix(scale(songs)))
+#hc = hclust(distance)
+#plot(hc)
+
+##KMEANS
+#scaledSongData <- scale(songs)
+#songClusters <- kmodes(songs, 5)
+#summary(songClusters)
+#clusplot(scaledSongData, songClusters$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
